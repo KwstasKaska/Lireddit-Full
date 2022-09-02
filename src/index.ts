@@ -11,6 +11,7 @@ import { UserResolver } from './resolvers/user';
 import { createClient } from 'redis';
 import session from 'express-session';
 import connectRedis from 'connect-redis';
+import { __secretKey__ } from './env-var';
 
 const main = async () => {
   AppDataSource.initialize()
@@ -32,7 +33,7 @@ const main = async () => {
       name: 'qid',
       store: new RedisStore({ client: redisClient }),
       saveUninitialized: false,
-      secret: '',
+      secret: __secretKey__,
       resave: false,
     })
   );
