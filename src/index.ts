@@ -8,6 +8,9 @@ import { HelloResolver } from './resolvers/hello';
 import { PostResolver } from './resolvers/post';
 import AppDataSource from './app-data-source';
 import { UserResolver } from './resolvers/user';
+import { createClient } from 'redis';
+import session from 'express-session';
+import connectRedis from 'connect-redis';
 
 const main = async () => {
   AppDataSource.initialize()
@@ -19,6 +22,20 @@ const main = async () => {
     });
 
   const app = express();
+
+  const RedisStore = connectRedis(session);
+  const redisClient = createClient({ legacyMode: true });
+  redisClient.connect().catch(console.error);
+
+  app.use(
+    session({
+      name: 'qid',
+      store: new RedisStore({ client: redisClient }),
+      saveUninitialized: false,
+      secret: '',
+      resave: false,
+    })
+  );
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({

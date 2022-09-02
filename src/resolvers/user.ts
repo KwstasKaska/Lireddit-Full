@@ -41,6 +41,7 @@ export class UserResolver {
     try {
       await user.save();
     } catch (err) {
+      // duplicate username error
       if (err.code === '23505') {
         return {
           errors: [
@@ -52,7 +53,7 @@ export class UserResolver {
         };
       }
     }
-    return { user } as any;
+    return { user };
   }
 
   @Mutation(() => UserResponse)
