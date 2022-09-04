@@ -8,10 +8,11 @@ import { HelloResolver } from './resolvers/hello';
 import { PostResolver } from './resolvers/post';
 import AppDataSource from './app-data-source';
 import { UserResolver } from './resolvers/user';
-import { createClient } from 'redis';
 import session from 'express-session';
+import { createClient } from 'redis';
 import connectRedis from 'connect-redis';
 import { __secretKey__ } from './env-var';
+import { MyContext } from './types';
 
 const main = async () => {
   AppDataSource.initialize()
@@ -31,7 +32,17 @@ const main = async () => {
   app.use(
     session({
       name: 'qid',
-      store: new RedisStore({ client: redisClient }),
+      store: new RedisStore({
+        client: redisClient,
+        disableTTL: true,
+        disableTouch: true,
+      }),
+      cookie: {
+        maxAge: 1000 * 60 * 60 * 24 * 365 * 10, //10years
+        httpOnly: true,
+        sameSite: 'lax', //csrf
+        secure: __prod__, // cookie only works in https
+      },
       saveUninitialized: false,
       secret: __secretKey__,
       resave: false,
@@ -43,7 +54,7 @@ const main = async () => {
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false,
     }),
-    context: ({ req, res }) => ({ req, res }),
+    context: ({ req, res }): MyContext => ({ req, res }),
     plugins: [ApolloServerPluginLandingPageGraphQLPlayground],
   });
 
