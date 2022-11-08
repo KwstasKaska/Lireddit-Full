@@ -1,16 +1,27 @@
-import { Arg, Ctx, Mutation, Resolver } from 'type-graphql';
+import { Arg, Ctx, Mutation, Query, Resolver } from 'type-graphql';
 import { UsernamePasswordInput } from './types/user-input';
 import argon2 from 'argon2';
 import { User } from '../entities/User';
 import { UserResponse } from './types/user-object';
 import { MyContext } from '../types';
+import AppDataSource from '../app-data-source';
 
 @Resolver()
 export class UserResolver {
+  @Query(() => User, { nullable: true })
+  async me(@Ctx() { req }: MyContext) {
+    // you are not logged in
+    if (!req.session.userId) {
+      return null;
+    }
+    const user = await User.findOne({ where: { id: req.session.userId } });
+    return user;
+  }
+
   @Mutation(() => UserResponse)
   async register(
-    @Arg('options') options: UsernamePasswordInput
-    // @Ctx() { req }: MyContext
+    @Arg('options') options: UsernamePasswordInput,
+    @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
     if (options.username.length <= 2) {
       return {
@@ -22,7 +33,7 @@ export class UserResolver {
         ],
       };
     }
-    if (options.password.length <= 3) {
+    if (options.password.length <= 2) {
       return {
         errors: [
           {
@@ -33,13 +44,17 @@ export class UserResolver {
       };
     }
     const hashedPassword = await argon2.hash(options.password);
-    const user = User.create({
-      username: options.username,
-      password: hashedPassword,
-    });
+    let user;
 
     try {
-      await user.save();
+      const result = await AppDataSource.createQueryBuilder()
+        .insert()
+        .into(User)
+        .values({ username: options.username, password: hashedPassword })
+        .returning('*')
+        .execute();
+
+      user = result.raw[0];
     } catch (err) {
       // duplicate username error
       if (err.code === '23505') {
@@ -53,6 +68,11 @@ export class UserResolver {
         };
       }
     }
+
+    //store user id session
+    // this will set a cookie on the user
+    // keep them logged in
+    req.session.userId = user.id;
     return { user };
   }
 

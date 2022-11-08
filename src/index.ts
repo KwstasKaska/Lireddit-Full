@@ -13,6 +13,7 @@ import { createClient } from 'redis';
 import connectRedis from 'connect-redis';
 import { __secretKey__ } from './env-var';
 import { MyContext } from './types';
+import cors from 'cors';
 
 const main = async () => {
   AppDataSource.initialize()
@@ -28,6 +29,13 @@ const main = async () => {
   const RedisStore = connectRedis(session);
   const redisClient = createClient({ legacyMode: true });
   redisClient.connect().catch(console.error);
+
+  app.use(
+    cors({
+      origin: 'http://localhost:3000',
+      credentials: true,
+    })
+  );
 
   app.use(
     session({
@@ -60,7 +68,10 @@ const main = async () => {
 
   await apolloServer.start();
 
-  apolloServer.applyMiddleware({ app });
+  apolloServer.applyMiddleware({
+    app,
+    cors: false,
+  });
 
   app.listen(4000, () => {
     console.log('Server started on localhost:4000');
