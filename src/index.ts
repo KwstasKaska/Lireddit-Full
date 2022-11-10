@@ -9,8 +9,8 @@ import { PostResolver } from './resolvers/post';
 import AppDataSource from './app-data-source';
 import { UserResolver } from './resolvers/user';
 import session from 'express-session';
-import { createClient } from 'redis';
 import connectRedis from 'connect-redis';
+import { createClient } from 'redis';
 import { __secretKey__ } from './env-var';
 import { MyContext } from './types';
 import cors from 'cors';
@@ -26,9 +26,14 @@ const main = async () => {
 
   const app = express();
 
-  const RedisStore = connectRedis(session);
-  const redisClient = createClient({ legacyMode: true });
-  redisClient.connect().catch(console.error);
+  let RedisStore = connectRedis(session);
+  let redisClient = createClient({
+    url: process.env.REDIS_URL,
+    legacyMode: true,
+  });
+  redisClient.connect().then(async () => {
+    console.log('connected');
+  });
 
   app.use(
     cors({
