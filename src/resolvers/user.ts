@@ -5,6 +5,7 @@ import { User } from '../entities/User';
 import { UserResponse } from './types/user-object';
 import { MyContext } from '../types';
 import AppDataSource from '../app-data-source';
+import { COOKIE_NAME } from '../constants';
 
 @Resolver()
 export class UserResolver {
@@ -108,5 +109,17 @@ export class UserResolver {
   }
 
   @Mutation(() => Boolean)
-  logout() {}
+  logout(@Ctx() { req, res }: MyContext) {
+    return new Promise((resolve) =>
+      req.session.destroy((err) => {
+        res.clearCookie(COOKIE_NAME);
+        if (err) {
+          console.log(err);
+          resolve(false);
+          return;
+        }
+        resolve(true);
+      })
+    );
+  }
 }

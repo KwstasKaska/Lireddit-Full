@@ -2,3 +2,4 @@ node_modules
 dist
 app-data-source.ts
 env-var.ts
+schema.graphql
