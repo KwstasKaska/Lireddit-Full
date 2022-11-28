@@ -7,4 +7,6 @@ export class UsernamePasswordInput implements Partial<User> {
   username: string;
   @Field()
   password: string;
+  @Field()
+  email: string;
 }

@@ -6,6 +6,7 @@ import { UserResponse } from './types/user-object';
 import { MyContext } from '../types';
 import AppDataSource from '../app-data-source';
 import { COOKIE_NAME } from '../constants';
+import { validateRegister } from '../utils/validateRegister';
 
 @Resolver()
 export class UserResolver {
@@ -19,30 +20,20 @@ export class UserResolver {
     return user;
   }
 
+  // @Mutation(() => User)
+  // async forgotPassword(@Arg('email') email: string) {
+  //   const user = await User.findOne({ where: { email } });
+  //   return true;
+  // }
+
   @Mutation(() => UserResponse)
   async register(
     @Arg('options') options: UsernamePasswordInput,
     @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
-    if (options.username.length <= 2) {
-      return {
-        errors: [
-          {
-            field: 'username',
-            message: 'length must be greater than 2',
-          },
-        ],
-      };
-    }
-    if (options.password.length <= 2) {
-      return {
-        errors: [
-          {
-            field: 'password',
-            message: 'length must be greater than 2',
-          },
-        ],
-      };
+    const errors = validateRegister(options);
+    if (errors) {
+      return { errors };
     }
     const hashedPassword = await argon2.hash(options.password);
     let user;
@@ -51,7 +42,11 @@ export class UserResolver {
       const result = await AppDataSource.createQueryBuilder()
         .insert()
         .into(User)
-        .values({ username: options.username, password: hashedPassword })
+        .values({
+          username: options.username,
+          email: options.email,
+          password: hashedPassword,
+        })
         .returning('*')
         .execute();
 
@@ -79,19 +74,27 @@ export class UserResolver {
 
   @Mutation(() => UserResponse)
   async login(
-    @Arg('options') options: UsernamePasswordInput,
+    @Arg('usernameOrEmail') usernameOrEmail: string,
+    @Arg('password') password: string,
+
     @Ctx() { req }: MyContext
   ): Promise<UserResponse> {
-    const user = await User.findOne({ where: { username: options.username } });
+    const user = await User.findOne(
+      usernameOrEmail.includes('@')
+        ? { where: { email: usernameOrEmail } }
+        : { where: { username: usernameOrEmail } }
+    );
     if (!user) {
-      errors: [
-        {
-          field: 'username',
-          message: 'That username doesnt exist',
-        },
-      ];
+      return {
+        errors: [
+          {
+            field: 'usernameOrEmail',
+            message: 'That username doesnt exist',
+          },
+        ],
+      };
     }
-    const valid = await argon2.verify(user!.password, options.password);
+    const valid = await argon2.verify(user!.password, password);
     if (!valid) {
       return {
         errors: [
