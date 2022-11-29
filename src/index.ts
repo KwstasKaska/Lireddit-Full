@@ -10,9 +10,9 @@ import { HelloResolver } from './resolvers/hello';
 import { PostResolver } from './resolvers/post';
 import AppDataSource from './app-data-source';
 import { UserResolver } from './resolvers/user';
+import Redis from 'ioredis';
 import session from 'express-session';
 import connectRedis from 'connect-redis';
-import { createClient } from 'redis';
 import { __secretKey__ } from './env-var';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -34,20 +34,17 @@ const main = async () => {
 
   // I connect with redis in order to make faster queries in the server side in addition with my cookie
   let RedisStore = connectRedis(session);
-  let redisClient = createClient({
-    url: process.env.REDIS_URL,
-    legacyMode: true,
-  });
-  redisClient.connect().then(async () => {
-    console.log('connected');
-  });
+  let redis = new Redis();
+  // redisClient.connect().then(async () => {
+  //   console.log('connected');
+  // });
 
   // I define my cookie and it's settings
   app.use(
     session({
       name: COOKIE_NAME,
       store: new RedisStore({
-        client: redisClient,
+        client: redis as any,
         disableTTL: true,
         disableTouch: true,
       }),
@@ -89,7 +86,7 @@ const main = async () => {
     }),
     bodyParser.json(),
     expressMiddleware(apolloServer, {
-      context: async ({ req, res }) => ({ req, res }),
+      context: async ({ req, res }) => ({ req, res, redis: redis }),
     })
   );
 

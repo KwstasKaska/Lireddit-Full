@@ -5,8 +5,10 @@ import { User } from '../entities/User';
 import { UserResponse } from './types/user-object';
 import { MyContext } from '../types';
 import AppDataSource from '../app-data-source';
-import { COOKIE_NAME } from '../constants';
+import { COOKIE_NAME, FORGET_PASSWORD_PREFIX } from '../constants';
 import { validateRegister } from '../utils/validateRegister';
+import { sendEmail } from '../utils/sendEmail';
+import { v4 } from 'uuid';
 
 @Resolver()
 export class UserResolver {
@@ -20,11 +22,32 @@ export class UserResolver {
     return user;
   }
 
-  // @Mutation(() => User)
-  // async forgotPassword(@Arg('email') email: string) {
-  //   const user = await User.findOne({ where: { email } });
-  //   return true;
-  // }
+  @Mutation(() => Boolean)
+  async forgotPassword(
+    @Arg('email') email: string,
+    @Ctx() { redis }: MyContext
+  ) {
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      // the email is not in the db
+      return true;
+    }
+
+    const token = v4();
+
+    await redis.set(
+      FORGET_PASSWORD_PREFIX + token,
+      user.id,
+      'EX',
+      60 * 60 * 24 * 3 // 3 days
+    );
+
+    await sendEmail(
+      email,
+      `<a  href="http://localhost:3000/change-password/${token}">reset password</a>`
+    );
+    return true;
+  }
 
   @Mutation(() => UserResponse)
   async register(
