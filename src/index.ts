@@ -30,6 +30,9 @@ const main = async () => {
 
   // I create the express server
   const app = express();
+  app.set('trust proxy', process.env.NODE_ENV !== 'production'); //a little fix here from another users codes--- actually think this made it works
+  app.set('Access-Control-Allow-Origin', 'https://studio.apollographql.com');
+  app.set('Access-Control-Allow-Credentials', true);
   const httpServer = createServer(app);
 
   // I connect with redis in order to make faster queries in the server side in addition with my cookie
@@ -51,8 +54,8 @@ const main = async () => {
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 10, //10years
         httpOnly: true,
-        sameSite: 'lax', //csrf
-        secure: __prod__, // cookie only works in https
+        sameSite: 'none',
+        secure: true, // cookie only works in https
       },
       saveUninitialized: false,
       secret: __secretKey__,
@@ -81,7 +84,7 @@ const main = async () => {
   app.use(
     '/graphql',
     cors<cors.CorsRequest>({
-      origin: 'http://localhost:3000',
+      origin: ['http://localhost:3000', 'https://studio.apollographql.com'],
       credentials: true,
     }),
     bodyParser.json(),
