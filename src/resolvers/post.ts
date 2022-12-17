@@ -3,7 +3,6 @@ import {
   Args,
   Ctx,
   FieldResolver,
-  Int,
   Mutation,
   Query,
   Resolver,
@@ -17,6 +16,7 @@ import { MyContext } from '../types';
 import { GetPostsArgs, PostInput, UpdatePostInput } from './types/post-input';
 import { PaginatedPosts } from './types/post-object';
 
+// Here i create the resolver for the Post entity and inside it, there gonna be the structure of the queries and mutations that afterwards i am gonna pass them through graphql to the client.
 @Resolver(Post)
 export class PostResolver {
   @FieldResolver(() => String)
@@ -26,48 +26,38 @@ export class PostResolver {
 
   @Query(() => PaginatedPosts)
   async posts(
-    // @Arg('limit', () => Int) limit: number,
-    // @Arg('cursor', () => String, { nullable: true }) cursor: string | null
     @Args() { limit, cursor }: GetPostsArgs
   ): Promise<PaginatedPosts> {
     const realLimit = Math.min(50, limit);
     const realLimitPlusOne = realLimit + 1;
 
-    // const replacements: any[] = [realLimitPlusOne];
-    // if (cursor) {
-    //   replacements.push(new Date(parseInt(cursor)));
-    // }
-
-    const qb = AppDataSource.getRepository(Post)
-      .createQueryBuilder('p')
-      .orderBy('"createdAt"', 'DESC')
-      .take(realLimitPlusOne);
-
+    const replacements: any[] = [realLimitPlusOne];
     if (cursor) {
-      qb.where('"createdAt" < :cursor', {
-        cursor: new Date(parseInt(cursor)),
-      });
+      replacements.push(new Date(parseInt(cursor)));
     }
-    const posts = await qb.getMany();
+
+    const posts = await AppDataSource.query(
+      ` select p.* ,
+        json_build_object(
+          'id', u.id,
+          'username', u.username,
+          'email', u.email
+          ) creator
+        from post p
+        inner join public.user u ON u.id = p."creatorId"
+        ${cursor ? 'where p."createdAt" < $2' : ''}
+        order by p."createdAt" DESC
+        limit $1
+      `,
+      replacements
+    );
+
+    // console.log(posts);
+
     return {
       posts: posts.slice(0, realLimit),
       hasMore: posts.length === realLimitPlusOne,
     };
-    // const posts = await AppDataSource.query(
-    //   `
-    //   select p.*
-    // from post p
-    // ${cursor ? 'where p."createdAt" < $2' : null}
-    // order by p."createdAt" DESC
-    // limit $1
-    // `,
-    //   replacements
-    // );
-
-    // return {
-    //   posts: posts.slice(0, realLimit),
-    //   hasMore: posts.length === realLimitPlusOne,
-    // };
   }
 
   @Query(() => Post, { nullable: true })
