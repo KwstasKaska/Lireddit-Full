@@ -30,17 +30,11 @@ const main = async () => {
 
   // I create the express server
   const app = express();
-  app.set('trust proxy', process.env.NODE_ENV !== 'production'); //a little fix here from another users codes--- actually think this made it works
-  app.set('Access-Control-Allow-Origin', 'https://studio.apollographql.com');
-  app.set('Access-Control-Allow-Credentials', true);
   const httpServer = createServer(app);
 
   // I connect with redis in order to make faster queries in the server side in addition with my cookie
   let RedisStore = connectRedis(session);
   let redis = new Redis();
-  // redisClient.connect().then(async () => {
-  //   console.log('connected');
-  // });
 
   // I define my cookie and it's settings
   app.use(
@@ -54,8 +48,8 @@ const main = async () => {
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 365 * 10, //10years
         httpOnly: true,
-        sameSite: 'none',
-        secure: true, // cookie only works in https
+        sameSite: 'lax',
+        secure: false, // cookie only works in https
       },
       saveUninitialized: false,
       secret: __secretKey__,
@@ -80,6 +74,7 @@ const main = async () => {
   // I start my server
   await apolloServer.start();
 
+  // app.set('trust proxy', true);
   // I declare my cors and expressMiddleware in order for me to use apollo-express-server
   app.use(
     '/graphql',

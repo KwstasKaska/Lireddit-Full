@@ -1,4 +1,4 @@
-import { Field, InputType } from 'type-graphql';
+import { ArgsType, Field, InputType, Int } from 'type-graphql';
 import { Post } from '../../entities/Post';
 
 @InputType()
@@ -17,4 +17,13 @@ export class PostInput implements Partial<Post> {
 
   @Field()
   text: string;
+}
+
+@ArgsType()
+export class GetPostsArgs {
+  @Field(() => Int, { nullable: true, defaultValue: 10 })
+  limit: number;
+
+  @Field(() => String, { nullable: true })
+  cursor: string | null;
 }
