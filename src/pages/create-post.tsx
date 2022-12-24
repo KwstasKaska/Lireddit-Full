@@ -7,7 +7,7 @@ import Layout from '../components/Layout';
 import { useCreatePostMutation } from '../generated/graphql';
 import useIsAuth from '../utils/useIsAuth';
 
-const CreatePost: React.FC<{}> = ({}) => {
+const CreatePost = () => {
   const [createPost] = useCreatePostMutation();
   const router = useRouter();
   useIsAuth();

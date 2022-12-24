@@ -3,7 +3,12 @@ fragment RegularPost on Post {
   title
   text
   points
-  creatorId
   createdAt
   updatedAt
+  textSnippet
+  voteStatus
+  creator {
+    id
+    username
+  }
 }

@@ -9,14 +9,15 @@ import {
 } from '@chakra-ui/react';
 import { GetServerSidePropsContext } from 'next';
 import Layout from '../components/Layout';
+import UpdootSection from '../components/UpdootSection';
 import { PostsDocument, usePostsQuery } from '../generated/graphql';
 import { addApolloState, initializeApollo } from '../lib/apolloClient';
 
 // a function that i use in order to do SSR for the query of posts
-export const getServerSideProps = async ({
-  req,
-}: GetServerSidePropsContext) => {
-  const apolloClient = initializeApollo({ ctx: { req } });
+export const getServerSideProps = async (
+  context: GetServerSidePropsContext
+) => {
+  const apolloClient = initializeApollo({ headers: context.req.headers });
   await apolloClient.query({ query: PostsDocument });
   return addApolloState(apolloClient, {
     props: {},
@@ -50,10 +51,14 @@ const Index = () => {
       ) : (
         <Stack spacing={8}>
           {data!.posts.posts.map((p) => (
-            <Box p={5} shadow="md" borderWidth="1px" key={p.id}>
-              <Heading fontSize="xl">{p.title}</Heading>
-              <Text mt={4}>{p.textSnippet}</Text>
-            </Box>
+            <Flex p={5} shadow="md" borderWidth="1px" key={p.id}>
+              <UpdootSection post={p} />
+              <Box>
+                <Heading fontSize="xl">{p.title}</Heading>
+                <Text>posted by {p.creator.username}</Text>
+                <Text mt={4}>{p.textSnippet}</Text>
+              </Box>
+            </Flex>
           ))}
         </Stack>
       )}
