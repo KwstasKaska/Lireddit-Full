@@ -50,6 +50,7 @@ const main = async () => {
         httpOnly: true,
         sameSite: 'lax',
         secure: false, // cookie only works in https
+        domain: 'localhost',
       },
       saveUninitialized: false,
       secret: __secretKey__,
@@ -74,7 +75,7 @@ const main = async () => {
   // I start my server
   await apolloServer.start();
 
-  // app.set('trust proxy', true);
+  app.set('trust proxy', true);
   // I declare my cors and expressMiddleware in order for me to use apollo-express-server
   app.use(
     '/graphql',
