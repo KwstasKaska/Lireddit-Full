@@ -50,7 +50,6 @@ const main = async () => {
         httpOnly: true,
         sameSite: 'lax',
         secure: false, // cookie only works in https
-        domain: 'localhost',
       },
       saveUninitialized: false,
       secret: __secretKey__,
@@ -64,10 +63,6 @@ const main = async () => {
     schema: await buildSchema({
       resolvers: [HelloResolver, PostResolver, UserResolver],
       validate: false,
-      emitSchemaFile: {
-        path: __dirname + '/schema.gql',
-        sortedSchema: false, // by default the printed schema is sorted alphabetically
-      },
     }),
     plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
   });
