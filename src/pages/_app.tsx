@@ -6,6 +6,7 @@ import { useApollo } from '../lib/apolloClient';
 
 function MyApp({ Component, pageProps }: AppProps) {
   const apolloClient = useApollo(pageProps);
+
   return (
     <ApolloProvider client={apolloClient}>
       <ChakraProvider theme={theme}>

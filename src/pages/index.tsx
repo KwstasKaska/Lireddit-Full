@@ -7,7 +7,7 @@ import {
   Stack,
   Text,
 } from '@chakra-ui/react';
-import { GetServerSidePropsContext } from 'next';
+import { GetServerSidePropsContext, NextPage } from 'next';
 import Layout from '../components/Layout';
 import UpdootSection from '../components/UpdootSection';
 import { PostsDocument, usePostsQuery } from '../generated/graphql';
@@ -17,14 +17,16 @@ import { addApolloState, initializeApollo } from '../lib/apolloClient';
 export const getServerSideProps = async (
   context: GetServerSidePropsContext
 ) => {
-  const apolloClient = initializeApollo({ headers: context.req.headers });
-  await apolloClient.query({ query: PostsDocument });
-  return addApolloState(apolloClient, {
+  const client = initializeApollo({ headers: context.req.headers });
+  await client.query({
+    query: PostsDocument,
+  });
+  return addApolloState(client, {
     props: {},
   });
 };
 
-const Index = () => {
+const Index: NextPage = () => {
   const { data, loading, fetchMore, variables } = usePostsQuery({
     variables: {
       limit: 20,

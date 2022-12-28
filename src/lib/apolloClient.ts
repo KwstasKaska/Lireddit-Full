@@ -9,45 +9,12 @@ import {
 import merge from 'deepmerge';
 import isEqual from 'lodash/isEqual';
 import { PaginatedPosts } from '../generated/graphql';
-import { IncomingHttpHeaders } from 'http';
 import { AppProps } from 'next/app';
+import { IncomingHttpHeaders } from 'http';
 
 export const APOLLO_STATE_PROP_NAME = '__APOLLO_STATE__';
 
-let apolloClient: ApolloClient<NormalizedCacheObject> | undefined;
-
-// function createApolloClient() {
-//   return new ApolloClient({
-//     ssrMode: typeof window === 'undefined',
-//     link: from([httpLink]),
-//     cache: new InMemoryCache({
-//       typePolicies: {
-//         Query: {
-//           fields: {
-//             posts: {
-//               // Don't cache separate results based on
-//               // any of this field's arguments.
-//               keyArgs: false,
-
-//               // Concatenate the incoming list items with
-//               // the existing list items.
-//               merge(
-//                 existing: PaginatedPosts | undefined,
-//                 incoming: PaginatedPosts
-//               ): PaginatedPosts {
-//                 console.log(existing, incoming);
-//                 return {
-//                   ...incoming,
-//                   posts: [...(existing?.posts || []), ...incoming?.posts],
-//                 };
-//               },
-//             },
-//           },
-//         },
-//       },
-//     }),
-//   });
-// }
+let apolloClient: ApolloClient<NormalizedCacheObject> | null = null;
 
 const createApolloClient = (headers: IncomingHttpHeaders | null = null) => {
   const enhancedFetch = (url: RequestInfo, init: RequestInit) => {
@@ -63,9 +30,6 @@ const createApolloClient = (headers: IncomingHttpHeaders | null = null) => {
 
   const httpLink = new HttpLink({
     uri: 'http://localhost:4000/graphql',
-    fetchOptions: {
-      mode: 'cors',
-    },
     credentials: 'include',
     fetch: enhancedFetch,
   });
@@ -102,19 +66,17 @@ const createApolloClient = (headers: IncomingHttpHeaders | null = null) => {
   });
 };
 
-type InitialState = NormalizedCacheObject | undefined;
+// type InitialState = NormalizedCacheObject | undefined;
 
 interface IInitializeApollo {
+  initialState?: NormalizedCacheObject | null;
   headers?: IncomingHttpHeaders | null;
-  initialState?: InitialState | null;
 }
 
-export const initializeApollo = (
-  { headers, initialState }: IInitializeApollo = {
-    headers: null,
-    initialState: null,
-  }
-) => {
+export const initializeApollo = ({
+  initialState = null,
+  headers = null,
+}: IInitializeApollo = {}) => {
   const _apolloClient = apolloClient ?? createApolloClient(headers);
 
   // If your page has Next.js data fetching methods that use Apollo Client, the initial state
