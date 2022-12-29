@@ -1,12 +1,5 @@
-import {
-  Box,
-  Button,
-  Flex,
-  Heading,
-  Link,
-  Stack,
-  Text,
-} from '@chakra-ui/react';
+import { Box, Button, Flex, Heading, Stack, Text } from '@chakra-ui/react';
+import Link from 'next/link';
 import { GetServerSidePropsContext, NextPage } from 'next';
 import Layout from '../components/Layout';
 import UpdootSection from '../components/UpdootSection';
@@ -43,9 +36,7 @@ const Index: NextPage = () => {
     <Layout>
       <Flex>
         <Heading>Lireddit</Heading>
-        <Link href="/create-post" ml="auto">
-          Create Post
-        </Link>
+        <Link href="/create-post">Create Post</Link>
       </Flex>
       <br></br>
       {!data && loading ? (
@@ -56,7 +47,14 @@ const Index: NextPage = () => {
             <Flex p={5} shadow="md" borderWidth="1px" key={p.id}>
               <UpdootSection post={p} />
               <Box>
-                <Heading fontSize="xl">{p.title}</Heading>
+                <Link
+                  href={{
+                    pathname: '/post/[id]',
+                    query: { id: p.id },
+                  }}
+                >
+                  <Heading fontSize="xl">{p.title}</Heading>
+                </Link>
                 <Text>posted by {p.creator.username}</Text>
                 <Text mt={4}>{p.textSnippet}</Text>
               </Box>
