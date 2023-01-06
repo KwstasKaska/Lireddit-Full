@@ -1,3 +1,4 @@
+import { Heading } from '@chakra-ui/react';
 import { NextPage } from 'next';
 import { useRouter } from 'next/router';
 import Layout from '../../components/Layout';
@@ -24,7 +25,12 @@ const Post: NextPage = ({}) => {
   if (error) {
     return <div>{error.message}</div>;
   }
-  return <Layout>{data?.post?.text}</Layout>;
+  return (
+    <Layout>
+      <Heading>{data?.post?.title}</Heading>
+      {data?.post?.text}
+    </Layout>
+  );
 };
 
 export default Post;

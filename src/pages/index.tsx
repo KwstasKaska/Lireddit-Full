@@ -1,10 +1,23 @@
-import { Box, Button, Flex, Heading, Stack, Text } from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Flex,
+  Heading,
+  IconButton,
+  Stack,
+  Text,
+} from '@chakra-ui/react';
 import Link from 'next/link';
 import { GetServerSidePropsContext, NextPage } from 'next';
 import Layout from '../components/Layout';
 import UpdootSection from '../components/UpdootSection';
-import { PostsDocument, usePostsQuery } from '../generated/graphql';
+import {
+  PostsDocument,
+  useDeletePostMutation,
+  usePostsQuery,
+} from '../generated/graphql';
 import { addApolloState, initializeApollo } from '../lib/apolloClient';
+import { DeleteIcon } from '@chakra-ui/icons';
 
 // a function that i use in order to do SSR for the query of posts
 export const getServerSideProps = async (
@@ -28,17 +41,14 @@ const Index: NextPage = () => {
     notifyOnNetworkStatusChange: true,
   });
 
+  const [deletePost] = useDeletePostMutation();
+
   if (!loading && !data) {
     return <div>you got query failed for some reason</div>;
   }
 
   return (
     <Layout>
-      <Flex>
-        <Heading>Lireddit</Heading>
-        <Link href="/create-post">Create Post</Link>
-      </Flex>
-      <br></br>
       {!data && loading ? (
         <div>loading...</div>
       ) : (
@@ -46,7 +56,7 @@ const Index: NextPage = () => {
           {data!.posts.posts.map((p) => (
             <Flex p={5} shadow="md" borderWidth="1px" key={p.id}>
               <UpdootSection post={p} />
-              <Box>
+              <Box flex={1}>
                 <Link
                   href={{
                     pathname: '/post/[id]',
@@ -56,7 +66,25 @@ const Index: NextPage = () => {
                   <Heading fontSize="xl">{p.title}</Heading>
                 </Link>
                 <Text>posted by {p.creator.username}</Text>
-                <Text mt={4}>{p.textSnippet}</Text>
+                <Flex align="center">
+                  <Text flex={1} mt={4}>
+                    {p.textSnippet}
+                  </Text>
+                  <IconButton
+                    aria-label="Delete Post"
+                    icon={<DeleteIcon />}
+                    colorScheme="red"
+                    onClick={() => {
+                      deletePost({
+                        variables: { id: p.id },
+                        // this gonna look like Post:1 or Post:505
+                        update: (cache) => {
+                          cache.evict({ id: 'Post:' + p.id });
+                        },
+                      });
+                    }}
+                  ></IconButton>
+                </Flex>
               </Box>
             </Flex>
           ))}
