@@ -14,10 +14,11 @@ import UpdootSection from '../components/UpdootSection';
 import {
   PostsDocument,
   useDeletePostMutation,
+  useMeQuery,
   usePostsQuery,
 } from '../generated/graphql';
 import { addApolloState, initializeApollo } from '../lib/apolloClient';
-import { DeleteIcon } from '@chakra-ui/icons';
+import { DeleteIcon, EditIcon } from '@chakra-ui/icons';
 
 // a function that i use in order to do SSR for the query of posts
 export const getServerSideProps = async (
@@ -41,6 +42,8 @@ const Index: NextPage = () => {
     notifyOnNetworkStatusChange: true,
   });
 
+  const { data: meData } = useMeQuery();
+
   const [deletePost] = useDeletePostMutation();
 
   if (!loading && !data) {
@@ -53,41 +56,60 @@ const Index: NextPage = () => {
         <div>loading...</div>
       ) : (
         <Stack spacing={8}>
-          {data!.posts.posts.map((p) => (
-            <Flex p={5} shadow="md" borderWidth="1px" key={p.id}>
-              <UpdootSection post={p} />
-              <Box flex={1}>
-                <Link
-                  href={{
-                    pathname: '/post/[id]',
-                    query: { id: p.id },
-                  }}
-                >
-                  <Heading fontSize="xl">{p.title}</Heading>
-                </Link>
-                <Text>posted by {p.creator.username}</Text>
-                <Flex align="center">
-                  <Text flex={1} mt={4}>
-                    {p.textSnippet}
-                  </Text>
-                  <IconButton
-                    aria-label="Delete Post"
-                    icon={<DeleteIcon />}
-                    colorScheme="red"
-                    onClick={() => {
-                      deletePost({
-                        variables: { id: p.id },
-                        // this gonna look like Post:1 or Post:505
-                        update: (cache) => {
-                          cache.evict({ id: 'Post:' + p.id });
-                        },
-                      });
+          {data!.posts.posts.map((p) =>
+            !p ? null : (
+              <Flex p={5} shadow="md" borderWidth="1px" key={p.id}>
+                <UpdootSection post={p} />
+                <Box flex={1}>
+                  <Link
+                    href={{
+                      pathname: '/post/[id]',
+                      query: { id: p.id },
                     }}
-                  ></IconButton>
-                </Flex>
-              </Box>
-            </Flex>
-          ))}
+                  >
+                    <Heading fontSize="xl">{p.title}</Heading>
+                  </Link>
+                  <Text>posted by {p.creator.username}</Text>
+                  <Flex align="center">
+                    <Text flex={1} mt={4}>
+                      {p.textSnippet}
+                    </Text>
+                    {meData?.me?.id !== p.creator.id ? null : (
+                      <Box ml="auto">
+                        <Link
+                          href={{
+                            pathname: '/post/edit/[id]',
+                            query: { id: p.id },
+                          }}
+                        >
+                          <IconButton
+                            mr={4}
+                            aria-label="Update Post"
+                            icon={<EditIcon />}
+                            colorScheme="blue"
+                          ></IconButton>
+                        </Link>
+                        <IconButton
+                          aria-label="Delete Post"
+                          icon={<DeleteIcon />}
+                          colorScheme="red"
+                          onClick={() => {
+                            deletePost({
+                              variables: { id: p.id },
+                              // this gonna look like Post:1 or Post:505
+                              update: (cache) => {
+                                cache.evict({ id: 'Post:' + p.id });
+                              },
+                            });
+                          }}
+                        ></IconButton>
+                      </Box>
+                    )}
+                  </Flex>
+                </Box>
+              </Flex>
+            )
+          )}
         </Stack>
       )}
       {data && data.posts.hasMore ? (

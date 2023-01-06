@@ -31,8 +31,8 @@ const NavBar: React.FC<NavBarProps> = ({}) => {
   else {
     body = (
       <Flex align="center">
-        <Button mr={4} as={Link}>
-          Create Post
+        <Button mr={4}>
+          <Link href="/create-post">Create Post</Link>
         </Button>
         <Box>{data.me.username}</Box>
         <Button

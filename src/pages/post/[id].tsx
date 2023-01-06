@@ -1,19 +1,11 @@
-import { Heading } from '@chakra-ui/react';
+import { Box, Heading } from '@chakra-ui/react';
 import { NextPage } from 'next';
-import { useRouter } from 'next/router';
 import Layout from '../../components/Layout';
-import { usePostQuery } from '../../generated/graphql';
+import { useGetPostFromUrl } from '../../utils/useGetPostFromUrl';
 
 // I need to do ssr on this too
 const Post: NextPage = ({}) => {
-  const router = useRouter();
-  const intId =
-    typeof router.query.id === 'string' ? parseInt(router.query.id) : -1;
-  const { data, loading, error } = usePostQuery({
-    variables: {
-      id: intId,
-    },
-  });
+  const { data, loading, error } = useGetPostFromUrl();
 
   if (loading) {
     return (
@@ -24,6 +16,13 @@ const Post: NextPage = ({}) => {
   }
   if (error) {
     return <div>{error.message}</div>;
+  }
+  if (!data?.post) {
+    return (
+      <Layout>
+        <Box>could not find post</Box>
+      </Layout>
+    );
   }
   return (
     <Layout>
