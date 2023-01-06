@@ -135,17 +135,22 @@ export class PostResolver {
   }
 
   @Mutation(() => Post, { nullable: true })
+  @UseMiddleware(isAuth)
   async updatePost(
-    @Arg('data') postInput: UpdatePostInput
+    @Arg('data') postInput: UpdatePostInput,
+    @Ctx() { req }: MyContext
   ): Promise<Post | null> {
-    const post = await Post.findOne({ where: { id: postInput.id } });
-    if (!post) {
-      return null;
-    }
-    if (typeof postInput.title !== 'undefined') {
-      await Post.update({ id: postInput.id }, { title: postInput.title });
-    }
-    return post;
+    const result = await AppDataSource.createQueryBuilder()
+      .update(Post)
+      .set({ title: postInput.title, text: postInput.text })
+      .where('id = :id and "creatorId" = :creatorId', {
+        id: postInput.id,
+        creatorId: req.session.userId,
+      })
+      .returning('*')
+      .execute();
+
+    return result.raw[0];
   }
 
   @Mutation(() => Boolean)
@@ -154,6 +159,14 @@ export class PostResolver {
     @Arg('id', () => Int) id: number,
     @Ctx() { req }: MyContext
   ): Promise<boolean> {
+    // const post = await Post.findOne({ where: { id: id } });
+    // if (!post) {
+    //   return false;
+    // }
+    // if (post.creatorId !== req.session.userId) {
+    //   throw new Error('not authorized');
+    // }
+
     await Post.delete({ id, creatorId: req.session.userId });
     return true;
   }

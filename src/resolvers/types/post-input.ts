@@ -3,11 +3,14 @@ import { Post } from '../../entities/Post';
 
 @InputType()
 export class UpdatePostInput implements Partial<Post> {
-  @Field()
+  @Field(() => Int)
   id: number;
 
   @Field({ nullable: true })
   title: string;
+
+  @Field({ nullable: true })
+  text: string;
 }
 
 @InputType()
